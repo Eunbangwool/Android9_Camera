@@ -22,6 +22,8 @@ class MjpegServer(
     private val channels: Int = 2,
     private val jpegQuality: Int = 70,
     private val streamFps: Int = 15,
+    private val authUser: String? = null,   // null 이면 인증 없음
+    private val authPass: String? = null,
 ) {
     companion object {
         private const val TAG = "MjpegServer"
@@ -75,8 +77,17 @@ class MjpegServer(
             socket.use { s ->
                 val reader = s.getInputStream().bufferedReader()
                 val requestLine = reader.readLine() ?: return
-                val path = requestLine.split(" ").getOrNull(1) ?: "/"
+                // 헤더 읽으며 Authorization 추출 (빈 줄까지)
+                var authHeader: String? = null
+                while (true) {
+                    val line = reader.readLine() ?: break
+                    if (line.isEmpty()) break
+                    if (line.startsWith("Authorization:", ignoreCase = true))
+                        authHeader = line.substringAfter(':').trim()
+                }
                 val out = s.getOutputStream()
+                if (!authorized(authHeader)) { sendUnauthorized(out); return }
+                val path = requestLine.split(" ").getOrNull(1) ?: "/"
                 when {
                     path == "/" || path.startsWith("/index") -> serveIndex(out)
                     path.startsWith("/ch") -> {
@@ -90,6 +101,26 @@ class MjpegServer(
         } catch (e: Exception) {
             // 클라이언트 연결 종료 등 — 조용히 정리
         }
+    }
+
+    private fun authorized(header: String?): Boolean {
+        val u = authUser
+        val p = authPass
+        if (u == null || p == null) return true   // 인증 비활성
+        if (header == null || !header.startsWith("Basic ", ignoreCase = true)) return false
+        val decoded = runCatching {
+            String(android.util.Base64.decode(header.substring(6).trim(), android.util.Base64.DEFAULT))
+        }.getOrNull() ?: return false
+        return decoded == "$u:$p"
+    }
+
+    private fun sendUnauthorized(out: OutputStream) {
+        out.write(
+            ("HTTP/1.0 401 Unauthorized\r\n" +
+                "WWW-Authenticate: Basic realm=\"FarmMachine CCTV\"\r\n" +
+                "Content-Length: 0\r\nConnection: close\r\n\r\n").toByteArray()
+        )
+        out.flush()
     }
 
     private fun serveIndex(out: OutputStream) {

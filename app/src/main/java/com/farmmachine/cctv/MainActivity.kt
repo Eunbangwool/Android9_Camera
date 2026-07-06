@@ -53,7 +53,12 @@ class MainActivity : ComponentActivity() {
         VanCamera.powerOn(this)
 
         if (castMode) {
-            server = MjpegServer(channels = 2).also { it.start() }
+            val pw = CctvCredentials.password(this)
+            server = MjpegServer(
+                channels = 2,
+                authUser = CctvCredentials.USER,
+                authPass = pw
+            ).also { it.start() }
         }
 
         worker.post {
@@ -122,10 +127,11 @@ class MainActivity : ComponentActivity() {
                 val ip = server?.wifiIpAddress()
                 val port = server?.boundPort ?: -1
                 val url = if (ip != null && port > 0) "http://$ip:$port" else "Wi-Fi/서버 확인 필요"
+                val cred = "🔒 ID: ${CctvCredentials.USER}  PW: ${CctvCredentials.password(this@MainActivity)}"
                 if (controller.framesFlowing()) {
-                    showStatus("📱 폰 접속: $url")
+                    showStatus("📱 폰 접속: $url\n$cred")
                 } else if (statusPinned) {
-                    showStatus("${controller.status}\n프레임: ${controller.frameSummary()}\n폰 접속: $url")
+                    showStatus("${controller.status}\n프레임: ${controller.frameSummary()}\n폰 접속: $url\n$cred")
                 }
             } else if (statusPinned) {
                 showStatus("${controller.status}\n프레임: ${controller.frameSummary()}\n(카메라 탭 = 전체화면/복귀)")
