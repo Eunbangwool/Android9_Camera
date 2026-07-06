@@ -35,14 +35,14 @@ jobs:
       - name: gradlew 실행권한
         run: chmod +x gradlew
 
-      - name: 빌드 (assembleDebug)
+      - name: 빌드 (assembleDebug — local + cast 두 플레이버)
         run: ./gradlew :app:assembleDebug --stacktrace
 
       - name: APK 업로드 (Actions 아티팩트)
         uses: actions/upload-artifact@v4
         with:
           name: farmmachine-cctv-debug
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/*/debug/*.apk
           if-no-files-found: error
 
       # 디버그 APK 를 Releases 에 롤링 프리릴리스로 발행 (태블릿에서 바로 다운로드/설치)
@@ -57,7 +57,11 @@ jobs:
           body: |
             자동 빌드 디버그 APK (디버그 키 서명). 태블릿에 직접 설치용 — 매 빌드마다 갱신됩니다.
 
+            - **local** (`app-local-debug.apk`) = 로컬 뷰어 (com.farmmachine.cctv)
+            - **cast** (`app-cast-debug.apk`) = 로컬 뷰어 + 폰 시청용 MJPEG 서버 (com.farmmachine.cctv.cast)
+              폰 브라우저에서 `http://<태블릿 Wi-Fi IP>:8080` 접속
+
             - commit: ${{ github.sha }}
             - run: #${{ github.run_number }}
             - branch: `${{ github.ref_name }}`
-          files: app/build/outputs/apk/debug/*.apk
+          files: app/build/outputs/apk/*/debug/*.apk

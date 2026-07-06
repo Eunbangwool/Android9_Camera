@@ -18,6 +18,7 @@ class CameraController(
     private val height: Int = 720,
     private val fps: Int = 25,
     val inputNum: Int = 2,            // 채널(카메라) 수
+    private val publishFrames: Boolean = false,   // cast 모드: NV21 을 FrameHub 로 발행(MJPEG 서버용)
 ) {
     companion object { private const val TAG = "Qcar" }
 
@@ -70,7 +71,7 @@ class CameraController(
     fun startChannel(ch: Int, holder: SurfaceHolder) {
         val cam = camera ?: return
         if (ch !in 0 until inputNum || readers[ch] != null) return
-        ChannelReader(cam, ch, width, height, holder).also { readers[ch] = it; it.start() }
+        ChannelReader(cam, ch, width, height, holder, publishFrames).also { readers[ch] = it; it.start() }
     }
 
     fun frameSummary(): String =
@@ -103,6 +104,7 @@ class ChannelReader(
     private val w: Int,
     private val h: Int,
     private val holder: SurfaceHolder,
+    private val publishFrames: Boolean = false,
 ) : Thread("qcar-ch$channel") {
 
     @Volatile private var running = true
@@ -127,6 +129,8 @@ class ChannelReader(
             if (info != null && info.frameID > lastId) {
                 lastId = info.frameID
                 buffer.get(yuv)
+                // cast 모드: NV21 사본을 서버로 발행 (ARGB 변환 전에)
+                if (publishFrames) FrameHub.publish(channel, yuv.copyOf(), w, h, info.frameID)
                 nv21ToArgb(yuv, w, h, argb)
                 bmp.setPixels(argb, 0, w, 0, 0, w, h)
                 draw()

@@ -13,12 +13,15 @@ import androidx.activity.ComponentActivity
 /**
  * Apollo 10 Pro 아날로그 카메라 CCTV 뷰어 — qcarcam(Qualcomm AIS) 2채널.
  *
- * 분할(좌 ch0 / 우 ch1) ↔ 전체화면 토글: 카메라 화면을 탭하면 그 채널만 전체화면,
- * 전체화면에서 다시 탭하면 분할로 복귀. 렌더는 비율 유지(레터박스).
+ * 분할(좌 ch0 / 우 ch1) ↔ 전체화면 토글, 비율 유지 렌더.
+ * cast 플레이버(BuildConfig.CAST_MODE)일 때 MJPEG 서버를 띄워 폰 브라우저로 시청 가능.
  */
 class MainActivity : ComponentActivity() {
 
-    private val controller = CameraController()
+    private val castMode = BuildConfig.CAST_MODE
+    private val controller = CameraController(publishFrames = castMode)
+    private var server: MjpegServer? = null
+
     private lateinit var status: TextView
     private lateinit var surface0: SurfaceView
     private lateinit var surface1: SurfaceView
@@ -26,8 +29,8 @@ class MainActivity : ComponentActivity() {
 
     private val surfaceReady = BooleanArray(2)
     @Volatile private var cameraReady = false
-    private var fullscreen: Int? = null          // null=분할, 0/1=해당 채널 전체화면
-    private var statusPinned = true               // 프레임 들어오면 자동 숨김
+    private var fullscreen: Int? = null
+    private var statusPinned = true
 
     private val ui = Handler(Looper.getMainLooper())
     private val worker = Handler(
@@ -48,6 +51,10 @@ class MainActivity : ComponentActivity() {
 
         showStatus("카메라 전원 인가 중…")
         VanCamera.powerOn(this)
+
+        if (castMode) {
+            server = MjpegServer(channels = 2).also { it.start() }
+        }
 
         worker.post {
             val loaded = controller.loadLibraries()
@@ -83,7 +90,6 @@ class MainActivity : ComponentActivity() {
         controller.startChannel(ch, holder)
     }
 
-    /** 채널 전체화면 ↔ 분할 토글 */
     private fun toggleFullscreen(ch: Int) {
         fullscreen = if (fullscreen == ch) null else ch
         applyMode()
@@ -111,9 +117,16 @@ class MainActivity : ComponentActivity() {
 
     private val statusTick = object : Runnable {
         override fun run() {
-            if (statusPinned) {
+            if (castMode) {
+                // 폰 접속 주소를 계속 표시 (작게)
+                val url = server?.wifiIpAddress()?.let { "http://$it:8080" } ?: "Wi-Fi 확인"
+                if (controller.framesFlowing()) {
+                    showStatus("📱 폰 접속: $url")
+                } else if (statusPinned) {
+                    showStatus("${controller.status}\n프레임: ${controller.frameSummary()}\n폰 접속: $url")
+                }
+            } else if (statusPinned) {
                 showStatus("${controller.status}\n프레임: ${controller.frameSummary()}\n(카메라 탭 = 전체화면/복귀)")
-                // 양 채널 프레임이 흐르기 시작하면 상태창 자동 숨김
                 if (controller.framesFlowing()) {
                     statusPinned = false
                     status.visibility = View.GONE
@@ -130,6 +143,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         ui.removeCallbacksAndMessages(null)
+        server?.stop()
         worker.post { controller.stop() }
         super.onDestroy()
     }

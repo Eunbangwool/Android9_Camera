@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">FarmMachine CCTV</string>
     <string name="cam_powering">카메라 전원 켜는 중…</string>
     <string name="cam_opening">카메라 여는 중…</string>
     <string name="cam_error">카메라 신호 없음 — 재시도 중…</string>

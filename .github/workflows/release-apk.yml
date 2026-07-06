@@ -39,8 +39,8 @@ jobs:
       - name: APK 버전명으로 정리
         run: |
           mkdir -p dist
-          src=$(ls app/build/outputs/apk/debug/*.apk | head -1)
-          cp "$src" "dist/farmmachine-cctv-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/apk/local/debug/*.apk "dist/farmmachine-cctv-local-${GITHUB_REF_NAME}.apk"
+          cp app/build/outputs/apk/cast/debug/*.apk  "dist/farmmachine-cctv-cast-${GITHUB_REF_NAME}.apk"
           ls -l dist
 
       - name: 버전 릴리스 발행
@@ -53,14 +53,16 @@ jobs:
           body: |
             팜머신 CCTV 뷰어 — **${{ github.ref_name }}** (디버그 서명, 태블릿 사이드로드용)
 
-            **기능**
-            - POE IP 카메라(ONVIF/RTSP/H.265) 라이브뷰 — 최대 4대 분할화면 + 탭 전체화면
-            - 분할=서브 스트림 / 전체화면=메인 스트림 자동 전환 (SoC 디코드 부하 관리)
-            - ONVIF 카메라 검색·스트림 URL 자동 조회 + 수동 RTSP URL 입력
-            - 자동 재연결(백오프)·프리즈 워치독, 네트워크 진단 패널
+            Apollo 10 Pro 아날로그 카메라(qcarcam/AIS) 2채널 뷰어.
 
-            **설치**: 태블릿에서 아래 APK 다운로드 → "출처를 알 수 없는 앱" 허용 후 설치.
-            ⚠ 디버그 키 서명입니다(스토어 배포용 아님).
+            - **local** (`...-local-...apk`, com.farmmachine.cctv) = 태블릿 화면 전용 뷰어
+            - **cast** (`...-cast-...apk`, com.farmmachine.cctv.cast) = 화면 + 폰 시청용 MJPEG 서버
+              (폰 브라우저에서 `http://<태블릿 Wi-Fi IP>:8080`)
+
+            **기능**: 2채널 분할 + 탭 전체화면, 720p 비율 유지, 카메라 전원 자동 인가, 부팅 자동 실행.
+
+            **설치**: 태블릿에서 APK 다운로드 → "출처를 알 수 없는 앱" 허용 후 설치.
+            ⚠ 디버그 키 서명(스토어 배포용 아님). local/cast 는 패키지가 달라 동시 설치 가능.
 
             - commit: `${{ github.sha }}`
           files: dist/*.apk

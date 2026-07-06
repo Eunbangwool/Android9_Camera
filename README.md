@@ -1,57 +1,72 @@
 # FarmMachine CCTV
 
-Apollo 10 Pro 산업용 태블릿(Android 9, Qualcomm MSM8953)용 **아날로그 카메라 라이브뷰 앱**.
-차량 방수 아날로그 카메라(4핀 항공 커넥터 → Deutsch 하네스)를 태블릿 카메라 입력에 연결해 전체화면으로 본다.
+Apollo 10 Pro 산업용 태블릿(Android 9, Qualcomm MSM8953)용 **아날로그 카메라 CCTV 뷰어**.
+차량 방수 아날로그 카메라 2대를 태블릿에서 실시간으로 본다.
 
-## 이 기기의 카메라 구조 (현장 확인 결과)
+## 카메라 경로 (현장 확인 결과)
 
-- 카메라는 **아날로그(AHD/CVBS)** — 케이블에 RJ45 없음, IP/POE 아님. `eth0`는 저속 SPI 이더넷으로 영상과 무관.
-- 태블릿이 아날로그 신호를 CSI 로 브릿지해 **표준 안드로이드 카메라 장치 1개**(Back, 최대 1280×720)로 노출.
-  → CameraX 로 표시. `/dev/video0`은 cameraserver 가 열어주므로 앱은 `CAMERA` 권한만 있으면 됨(root 불필요).
-- **카메라 전원**은 GPIO 로 잠겨 있어, 시스템 서비스 `com.van.service` 에 브로드캐스트를 보내 켠다:
-  - ON  : `com.cpdevice.action.CAMERGPIOON`  → `com.van.service/.CamerGpioOnBoardcastReceiver`
-  - OFF : `com.cpdevice.action.CAMERGPIOOFF` → `.CamerGpioOffBoardcastReceiver`
-  - 앱이 시작 시 자동으로 ON 브로드캐스트를 보냄 (`VanCamera.powerOn`).
+- 카메라는 **아날로그(AHD)** — `/dev/rn6864m`(RN6864 AHD 디코더)로 디코딩되어 CSI 채널 0·1 로 입력.
+- 표준 안드로이드 카메라 API 는 이 입력을 못 받음(파란 stub 확인). 실제 영상은 **Qualcomm AIS/qcarcam** 경로로만 나옴.
+- 그래서 벤더 네이티브 라이브러리(`libmmqcar_qcar_jni.so` 외, `app/src/main/jniLibs/arm64-v8a/`)를 통해
+  `com.quectel.qcarapi` 인터페이스로 채널 0·1 프레임(NV21)을 받아 렌더링한다.
+  (오너가 AGMO 사용 허락 확보, 비상업 목적.)
+- 카메라 전원은 GPIO 로 잠겨 있어 시스템 서비스 `com.van.service` 에 `com.cpdevice.action.CAMERGPIOON`
+  브로드캐스트를 보내 켠다(`VanCamera`, root 불필요).
 
-## 동작
+## 기능
 
-1. 앱 실행 → 카메라 전원 ON 브로드캐스트
-2. `CAMERA` 권한 요청 (최초 1회)
-3. CameraX 로 후면 카메라(외부 아날로그 입력) 전체화면 프리뷰
-4. 신호 없거나 바인드 실패 시 전원 재인가 + 재시도 (2초 간격)
+- **2채널 분할**(좌 ch0 / 우 ch1), 카메라 화면 **탭 → 전체화면 / 다시 탭 → 분할**
+- **720p**, 화면비 유지(레터박스) 렌더
+- 카메라 전원 자동 인가
+- **부팅 시 자동 실행**(AGMO Solution 이 먼저 뜨도록 30초 지연 — `BootReceiver`)
 
-⚠️ **여러 대 분할화면은 이 하드웨어에서 불가.** 아날로그 입력이 1채널(카메라 장치 1개)뿐이다.
-다중 카메라는 아날로그 카메라 추가 + 쿼드 멀티플렉서 + 벤더(Quectel) 멀티채널 SDK 가 필요한 별도 작업.
+## 두 가지 앱 (Gradle 플레이버)
+
+| 플레이버 | 패키지 | 설명 |
+|---|---|---|
+| **local** | `com.farmmachine.cctv` | 태블릿 화면 전용 뷰어 (완성본) |
+| **cast**  | `com.farmmachine.cctv.cast` | 화면 + **폰 시청용 MJPEG 서버** |
+
+패키지가 달라 **두 앱 동시 설치 가능**.
+
+### 폰에서 실시간 시청 (cast 앱)
+
+cast 앱 실행 중, 태블릿과 **같은 Wi-Fi**에 연결된 폰의 브라우저에서:
+
+```
+http://<태블릿 Wi-Fi IP>:8080
+```
+
+주소는 cast 앱 화면 좌상단(`📱 폰 접속: http://…:8080`)에 표시된다. `/ch0`, `/ch1` 로 개별 채널도 접근 가능.
+(MJPEG over HTTP — 폰에 앱 설치 불필요, 브라우저만 있으면 됨.)
 
 ## 설치
 
-푸시마다 CI 가 디버그 APK 를 빌드해 **Releases 의 `cctv-debug` 롤링 프리릴리스**로 올린다.
-태블릿 브라우저로 다운로드 → "출처를 알 수 없는 앱" 허용 → 설치. (서명 고정이라 덮어쓰기 설치 가능)
-
-## 현장 점검
-
-1. 카메라 하네스 연결 후 앱 실행 → 화면에 영상이 뜨는지 확인
-2. 안 뜨면: 앱이 카메라 전원 브로드캐스트를 보냈는지 logcat 확인
-   `adb logcat -s VanCamera CctvMain`
-3. 어두운 데서 렌즈 앞을 보면 적외선 LED(붉은 점)로 카메라 생존 확인
-4. 카메라 장치 재확인: `adb shell dumpsys media.camera | findstr "Number of camera"`
+CI 가 푸시마다 두 APK 를 빌드해 **Releases 의 `cctv-debug` 롤링 프리릴리스**에 올린다:
+`app-local-debug.apk`, `app-cast-debug.apk`. 태블릿 브라우저로 받아 설치(출처 불명 앱 허용).
+최초 1회 수동 실행해야 부팅 자동실행이 활성화된다.
 
 ## 빌드
 
 ```bash
-./gradlew :app:assembleDebug     # JDK 17 + Android SDK 34
+./gradlew :app:assembleDebug     # local + cast 두 플레이버 모두 빌드 (JDK 17 + SDK 34)
 ```
 
-- 스택: Gradle 8.2.1 / AGP 8.2.2 / Kotlin 2.0.21 / minSdk 23 / targetSdk 34
-- 의존성: CameraX 1.3.4 (core/camera2/lifecycle/view)
-- CI: `.github/workflows/build-cctv-apk.yml` (롤링 디버그) / `release-apk.yml` (v* 태그 정식)
+- 스택: Gradle 8.2.1 / AGP 8.2.2 / Kotlin 2.0.21 / minSdk 23 / targetSdk 34 / abiFilters arm64-v8a
+- 카메라: 프레임워크 API 아님 → Quectel qcarcam(`jniLibs`), 카메라 프레임 폴링(getPreviewFrameInfo) → NV21
 
 ## 구조
 
 ```
 app/src/main/java/com/farmmachine/cctv/
-├── MainActivity.kt   # CameraX 전체화면 프리뷰, 권한, 재시도, 몰입형
-└── VanCamera.kt      # com.van.service 브로드캐스트로 카메라 전원 ON/OFF
+├── MainActivity.kt        # 2채널 분할↔전체화면, cast 모드면 MJPEG 서버 기동
+├── CameraController.kt    # qcarcam open + 채널별 프레임 폴링/렌더(ChannelReader), NV21→ARGB
+├── VanCamera.kt           # com.van.service 로 카메라 전원 ON/OFF
+├── BootReceiver.kt        # 부팅 지연 자동실행(AlarmManager)
+├── MjpegServer.kt         # (cast) 초경량 MJPEG-over-HTTP 서버
+└── FrameHub.kt            # 캡처→서버 최신 NV21 공유
+com/quectel/qcarapi/…      # qcarcam JNI 인터페이스(재구현/원본, JNI_OnLoad 바인딩용)
+app/src/main/jniLibs/arm64-v8a/  # Quectel 벤더 .so (비상업·오너 허가)
 ```
 
 ## 관련 레포
