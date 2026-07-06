@@ -45,11 +45,7 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.13.1")
-    implementation("androidx.activity:activity-ktx:1.9.2")   // ComponentActivity = LifecycleOwner (CameraX bind)
-    // CameraX — 실기기 카메라 HAL 이 LEGACY(v1.0)라도 Preview 유스케이스는 전 하드웨어레벨 지원
-    val camerax = "1.3.4"
-    implementation("androidx.camera:camera-core:$camerax")
-    implementation("androidx.camera:camera-camera2:$camerax")
-    implementation("androidx.camera:camera-lifecycle:$camerax")
-    implementation("androidx.camera:camera-view:$camerax")
+    implementation("androidx.activity:activity-ktx:1.9.2")
+    // 카메라는 프레임워크 Camera1 API(android.hardware.Camera) 직접 사용 —
+    // 실기기 HAL 이 "Camera1 API shim / legacy device@1.0" 라 CameraX(Camera2 상위)보다 정합.
 }
