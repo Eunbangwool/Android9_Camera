@@ -20,19 +20,42 @@ import java.net.Socket
  */
 class MjpegServer(
     private val channels: Int = 2,
-    private val port: Int = 8080,
     private val jpegQuality: Int = 70,
     private val streamFps: Int = 15,
 ) {
-    companion object { private const val TAG = "MjpegServer" }
+    companion object {
+        private const val TAG = "MjpegServer"
+        // 8080 은 기기의 다른 서비스가 점유(400 응답)하고 있어 사용 안 함. 비어있는 포트를 순차 시도.
+        private val CANDIDATE_PORTS = intArrayOf(8090, 8088, 8181, 9000, 8080)
+    }
 
     private var serverSocket: ServerSocket? = null
     @Volatile private var running = false
 
-    fun start() {
-        if (running) return
+    /** 실제 바인딩된 포트 (실패 시 -1). URL 표시에 사용 */
+    @Volatile var boundPort: Int = -1
+        private set
+
+    /** 동기 바인딩 후 accept 스레드 시작. 바인딩된 포트 반환(-1=실패). */
+    fun start(): Int {
+        if (running) return boundPort
+        for (p in CANDIDATE_PORTS) {
+            try {
+                serverSocket = ServerSocket(p)
+                boundPort = p
+                break
+            } catch (e: Exception) {
+                Log.w(TAG, "포트 $p 바인딩 실패: ${e.message}")
+            }
+        }
+        val ss = serverSocket ?: run {
+            Log.e(TAG, "모든 후보 포트 바인딩 실패")
+            return -1
+        }
         running = true
-        Thread({ acceptLoop() }, "mjpeg-accept").start()
+        Log.i(TAG, "MJPEG 서버 시작: ${wifiIpAddress()}:$boundPort")
+        Thread({ acceptLoop(ss) }, "mjpeg-accept").start()
+        return boundPort
     }
 
     fun stop() {
@@ -40,17 +63,10 @@ class MjpegServer(
         runCatching { serverSocket?.close() }
     }
 
-    private fun acceptLoop() {
-        try {
-            val ss = ServerSocket(port)
-            serverSocket = ss
-            Log.i(TAG, "MJPEG 서버 시작: ${wifiIpAddress()}:$port")
-            while (running) {
-                val socket = try { ss.accept() } catch (e: Exception) { break }
-                Thread({ handle(socket) }, "mjpeg-client").start()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "서버 시작 실패: ${e.message}", e)
+    private fun acceptLoop(ss: ServerSocket) {
+        while (running) {
+            val socket = try { ss.accept() } catch (e: Exception) { break }
+            Thread({ handle(socket) }, "mjpeg-client").start()
         }
     }
 

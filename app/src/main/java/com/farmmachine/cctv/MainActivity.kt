@@ -118,8 +118,10 @@ class MainActivity : ComponentActivity() {
     private val statusTick = object : Runnable {
         override fun run() {
             if (castMode) {
-                // 폰 접속 주소를 계속 표시 (작게)
-                val url = server?.wifiIpAddress()?.let { "http://$it:8080" } ?: "Wi-Fi 확인"
+                // 폰 접속 주소를 계속 표시 (실제 바인딩된 포트)
+                val ip = server?.wifiIpAddress()
+                val port = server?.boundPort ?: -1
+                val url = if (ip != null && port > 0) "http://$ip:$port" else "Wi-Fi/서버 확인 필요"
                 if (controller.framesFlowing()) {
                     showStatus("📱 폰 접속: $url")
                 } else if (statusPinned) {
