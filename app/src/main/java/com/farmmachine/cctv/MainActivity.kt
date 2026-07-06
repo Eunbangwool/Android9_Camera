@@ -42,6 +42,15 @@ class MainActivity : ComponentActivity(), SurfaceHolder.Callback {
     private var surfaceReady = false
     private var lastError: String? = null
 
+    // 프레임 내용 분석 결과 (단색 파랑 stub vs 실제 영상 판별)
+    private var chosenW = 0
+    private var chosenH = 0
+    private var lumaMin = 0
+    private var lumaMax = 0
+    private var lumaMean = 0
+    private var chromaU = 0
+    private var chromaV = 0
+
     private val requestCameraPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) tryStart() else render("카메라 권한 거부됨")
@@ -105,11 +114,15 @@ class MainActivity : ComponentActivity(), SurfaceHolder.Callback {
             if (supportedSizes.isNotEmpty()) {
                 val size = supportedSizes[sizeIndex.coerceIn(0, supportedSizes.size - 1)]
                 params.setPreviewSize(size.width, size.height)
+                chosenW = size.width; chosenH = size.height
             }
             cam.parameters = params
             cam.setDisplayOrientation(0)   // 가로 고정
             cam.setPreviewDisplay(surfaceView.holder)
-            cam.setPreviewCallback { _, _ -> frameCount++ }   // 프레임 도착 여부 실측
+            cam.setPreviewCallback { data, _ ->
+                frameCount++
+                if (data != null && frameCount % 15 == 0) analyzeFrame(data)   // 픽셀 내용 실측
+            }
             cam.startPreview()
         } catch (e: Throwable) {
             lastError = e.message ?: e.javaClass.simpleName
@@ -147,13 +160,42 @@ class MainActivity : ComponentActivity(), SurfaceHolder.Callback {
         }
     }
 
+    /** NV21 프레임 내용 분석: 루마 min/max/mean + 대표 색차. 단색이면 min≈max, 변화 없음. */
+    private fun analyzeFrame(data: ByteArray) {
+        val w = chosenW; val h = chosenH
+        val ySize = w * h
+        if (w == 0 || h == 0 || data.size < ySize) return
+        var mn = 255; var mx = 0; var sum = 0L; var n = 0
+        var i = 0
+        val step = (ySize / 4000).coerceAtLeast(1)   // 약 4000점 샘플
+        while (i < ySize) {
+            val y = data[i].toInt() and 0xFF
+            if (y < mn) mn = y
+            if (y > mx) mx = y
+            sum += y; n++
+            i += step
+        }
+        // NV21: Y 다음에 V,U 인터리브 (VU 순). 중앙 부근 한 쌍 샘플
+        var u = 0; var v = 0
+        val cBase = ySize + (ySize / 4 / 2) * 2
+        if (cBase + 1 < data.size) {
+            v = data[cBase].toInt() and 0xFF
+            u = data[cBase + 1].toInt() and 0xFF
+        }
+        lumaMin = mn; lumaMax = mx; lumaMean = if (n > 0) (sum / n).toInt() else 0
+        chromaU = u; chromaV = v
+    }
+
     private fun diag(numCameras: Int): String {
         val cur = supportedSizes.getOrNull(sizeIndex)?.let { "${it.width}x${it.height}" } ?: "-"
         val sizes = supportedSizes.joinToString(", ") { "${it.width}x${it.height}" }
+        val uniform = if (lumaMax - lumaMin < 12) "단색(변화없음)" else "영상있음(변화$lumaMin~$lumaMax)"
         return buildString {
             append("카메라 수: $numCameras\n")
             append("선택 해상도: $cur  (화면 탭=다음)\n")
             append("도착 프레임: $frameCount\n")
+            append("루마 min/max/mean: $lumaMin/$lumaMax/$lumaMean → $uniform\n")
+            append("색차 U/V: $chromaU/$chromaV  (파랑≈U높음)\n")
             lastError?.let { append("오류: $it\n") }
             append("\n지원 해상도:\n$sizes")
         }
