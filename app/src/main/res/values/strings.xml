@@ -1,59 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">FarmMachine CCTV</string>
-
-    <!-- 메인 화면 -->
-    <string name="empty_no_camera">등록된 카메라가 없습니다</string>
-    <string name="empty_add_camera">카메라 추가</string>
-    <string name="tile_connecting">연결 중…</string>
-    <string name="tile_retry_fmt">연결 끊김 — 재시도 %1$d</string>
-    <string name="settings_button_desc">설정</string>
-
-    <!-- 설정 화면 -->
-    <string name="settings_title">카메라 설정</string>
-    <string name="btn_add_camera">＋ 카메라 추가</string>
-    <string name="btn_discover">카메라 검색 (ONVIF)</string>
-    <string name="discover_running">네트워크에서 카메라 검색 중…</string>
-    <string name="discover_none">카메라를 찾지 못했습니다. 직결 링크에서는 멀티캐스트가 막힐 수 있으니 IP 를 직접 입력하세요.</string>
-    <string name="discover_found_fmt">발견된 카메라: %1$s</string>
-    <string name="network_panel_title">네트워크 상태</string>
-    <string name="network_no_iface">활성 네트워크 인터페이스 없음 — 케이블/이더넷 설정 확인</string>
-    <string name="btn_refresh_network">새로고침</string>
-    <string name="btn_static_ip">이더넷 고정 IP 설정 (루트)</string>
-    <string name="static_ip_ok_fmt">고정 IP 설정됨: %1$s</string>
-    <string name="static_ip_fail_fmt">고정 IP 실패: %1$s\n시스템 설정에서 수동으로 IP 를 설정하세요.</string>
-    <string name="probe_ok">RTSP(554) 연결 가능</string>
-    <string name="probe_fail">RTSP(554) 연결 불가</string>
-
-    <!-- 카메라 편집 다이얼로그 -->
-    <string name="dlg_camera_title_add">카메라 추가</string>
-    <string name="dlg_camera_title_edit">카메라 수정</string>
-    <string name="hint_name">이름 (예: 전방)</string>
-    <string name="hint_host">카메라 IP (예: 192.168.1.168)</string>
-    <string name="hint_onvif_port">ONVIF 포트 (기본 80)</string>
-    <string name="hint_user">아이디 (기본 admin)</string>
-    <string name="hint_pass">비밀번호</string>
-    <string name="hint_main_url">메인 스트림 RTSP URL (전체화면용)</string>
-    <string name="hint_sub_url">서브 스트림 RTSP URL (분할화면용)</string>
-    <string name="btn_onvif_fetch">ONVIF 에서 URL 가져오기</string>
-    <string name="onvif_fetching">카메라에 URL 조회 중…</string>
-    <string name="onvif_ok_fmt">가져옴 ✓ 프로파일 해상도: %1$s</string>
-    <string name="onvif_auth_fail">인증 실패 — 아이디/비밀번호 확인</string>
-    <string name="onvif_fail_fmt">ONVIF 실패: %1$s</string>
-    <string name="save">저장</string>
-    <string name="cancel">취소</string>
-    <string name="delete">삭제</string>
-    <string name="edit">수정</string>
-    <string name="btn_probe">연결 확인</string>
-    <string name="err_need_host">카메라 IP 를 입력하세요</string>
-    <string name="err_need_main_url">메인 스트림 URL 이 필요합니다 (직접 입력 또는 ONVIF 가져오기)</string>
-    <string name="err_max_cameras_fmt">카메라는 최대 %1$d대까지 등록할 수 있습니다</string>
-    <string name="delete_confirm_fmt">\'%1$s\' 카메라를 삭제할까요?</string>
-
-    <!-- 고정 IP 다이얼로그 -->
-    <string name="dlg_static_ip_title">이더넷 고정 IP (루트 필요)</string>
-    <string name="hint_iface">인터페이스 (예: eth0)</string>
-    <string name="hint_static_ip">IP (예: 192.168.1.100)</string>
-    <string name="hint_netmask">넷마스크 (예: 255.255.255.0)</string>
-    <string name="apply">적용</string>
+    <string name="cam_powering">카메라 전원 켜는 중…</string>
+    <string name="cam_opening">카메라 여는 중…</string>
+    <string name="cam_error">카메라 신호 없음 — 재시도 중…</string>
+    <string name="cam_permission_needed">카메라 권한이 필요합니다. 설정에서 허용해 주세요.</string>
 </resources>

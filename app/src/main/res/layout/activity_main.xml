@@ -1,47 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- tileHost: 그리드/전체화면 타일을 MainActivity 가 코드로 구성 (1대=전면, 2대=좌우, 3-4대=2x2) -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <FrameLayout
-        android:id="@+id/tileHost"
+    <androidx.camera.view.PreviewView
+        android:id="@+id/previewView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <LinearLayout
-        android:id="@+id/emptyView"
+    <TextView
+        android:id="@+id/status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:gravity="center"
-        android:orientation="vertical"
-        android:visibility="gone">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/empty_no_camera"
-            android:textColor="@color/text_secondary"
-            android:textSize="20sp" />
-
-        <Button
-            android:id="@+id/btnEmptyAdd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="@string/empty_add_camera" />
-    </LinearLayout>
-
-    <ImageButton
-        android:id="@+id/btnSettings"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_gravity="top|end"
-        android:layout_margin="12dp"
         android:background="@color/overlay_scrim"
-        android:contentDescription="@string/settings_button_desc"
-        android:src="@android:drawable/ic_menu_preferences"
-        android:alpha="0.7" />
+        android:padding="14dp"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp" />
 </FrameLayout>

@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
-    <!-- WS-Discovery(UDP 멀티캐스트 3702) 수신에 MulticastLock 필요 -->
-    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE" />
+    <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <!-- 외부 아날로그 카메라 입력. 내장 카메라 없는 기기도 있으므로 required=false -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application
         android:allowBackup="false"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/Theme.Cctv"
-        android:usesCleartextTraffic="true">
-        <!-- usesCleartextTraffic: ONVIF SOAP 는 평문 HTTP, RTSP 도 평문 — targetSdk 28+ 기본 차단 해제 필수 -->
+        android:theme="@style/Theme.Cctv">
 
         <activity
             android:name=".MainActivity"
@@ -27,12 +24,5 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
-        <activity
-            android:name=".settings.SettingsActivity"
-            android:exported="false"
-            android:theme="@style/Theme.Cctv.Settings"
-            android:screenOrientation="landscape"
-            android:configChanges="orientation|screenSize|keyboardHidden" />
     </application>
 </manifest>
