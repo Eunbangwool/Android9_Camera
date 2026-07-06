@@ -1,33 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 타일(SurfaceView)은 MainActivity 가 채널 수에 맞춰 2x2 그리드로 코드 생성 -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <!-- 2채널 분할: 좌=채널0 / 우=채널1 -->
     <LinearLayout
+        android:id="@+id/grid"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal">
-
-        <SurfaceView
-            android:id="@+id/surface0"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-
-        <View
-            android:id="@+id/divider"
-            android:layout_width="2dp"
-            android:layout_height="match_parent"
-            android:background="@color/black" />
-
-        <SurfaceView
-            android:id="@+id/surface1"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1" />
-    </LinearLayout>
+        android:orientation="vertical" />
 
     <TextView
         android:id="@+id/status"

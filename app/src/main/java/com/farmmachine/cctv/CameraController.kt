@@ -52,11 +52,14 @@ class CameraController(
     fun open(): Boolean = try {
         val cam = QCarCamera(0)
         val rc = cam.cameraOpen(inputNum, 0)   // csi0, inputNum 채널, fmt=0
+        // 채널별로 독립 시작 — 미연결 채널(3·4 등)이 실패해도 나머지는 정상 동작
         for (ch in 0 until inputNum) {
-            cam.setFps(ch, fps)
-            cam.setPreviewStreamSize(ch, width, height)
-            cam.setPreviewStreamColorFormat(ch, QCarCamera.YUV420_NV21)
-            cam.startPreviewStream(ch)
+            runCatching {
+                cam.setFps(ch, fps)
+                cam.setPreviewStreamSize(ch, width, height)
+                cam.setPreviewStreamColorFormat(ch, QCarCamera.YUV420_NV21)
+                cam.startPreviewStream(ch)
+            }.onFailure { Log.w(TAG, "ch$ch 스트림 시작 실패: ${it.message}") }
         }
         camera = cam
         status = "cameraOpen=$rc, ${inputNum}채널 @${width}x$height"
@@ -77,11 +80,10 @@ class CameraController(
     fun frameSummary(): String =
         (0 until inputNum).joinToString("  ") { "ch$it=${readers[it]?.frames ?: 0}" }
 
-    /** 활성 리더가 모두 프레임을 받기 시작했는지 (상태창 자동 숨김 판단) */
-    fun framesFlowing(): Boolean {
-        val active = readers.filterNotNull()
-        return active.isNotEmpty() && active.all { it.frames > 15 }
-    }
+    fun frames(ch: Int): Long = readers.getOrNull(ch)?.frames ?: 0
+
+    /** 채널 중 하나라도 프레임이 흐르기 시작했는지 (상태창 자동 숨김 판단) */
+    fun framesFlowing(): Boolean = readers.filterNotNull().any { it.frames > 15 }
 
     fun stop() {
         readers.forEach { it?.stopReader() }
