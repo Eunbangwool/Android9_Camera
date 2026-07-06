@@ -14,7 +14,8 @@ android {
         versionCode = (project.findProperty("versionCodeOverride") as? String)?.toIntOrNull() ?: 1
         versionName = "0.1"
 
-        ndk { abiFilters += listOf("arm64-v8a", "armeabi-v7a") }
+        // 실기기 = arm64-v8a. Quectel .so 가 arm64 만 있으므로 이 ABI 로 고정.
+        ndk { abiFilters += listOf("arm64-v8a") }
     }
 
     // 고정 debug 키스토어로 서명 → CI 빌드마다 서명 동일 → 덮어쓰기 설치 가능
@@ -34,6 +35,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+    }
+
+    // 번들 .so 를 디스크로 추출(useLegacyPackaging=true) → 동적 링커가 DT_NEEDED/dlopen 을
+    // nativeLibraryDir 에서 해결 가능. Quectel 라이브러리 상호 의존 해결에 필요.
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
     compileOptions {

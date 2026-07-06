@@ -4,20 +4,39 @@
     android:layout_height="match_parent"
     android:background="@color/black">
 
-    <SurfaceView
-        android:id="@+id/previewSurface"
+    <!-- 2채널 분할: 좌=채널0 / 우=채널1 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <SurfaceView
+            android:id="@+id/surface0"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <View
+            android:layout_width="2dp"
+            android:layout_height="match_parent"
+            android:background="@color/black" />
+
+        <SurfaceView
+            android:id="@+id/surface1"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/status"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="top|start"
-        android:layout_margin="10dp"
+        android:layout_margin="8dp"
         android:background="@color/overlay_scrim"
-        android:padding="10dp"
+        android:padding="8dp"
         android:fontFamily="monospace"
         android:textColor="@color/text_primary"
-        android:textSize="13sp" />
+        android:textSize="12sp" />
 </FrameLayout>
