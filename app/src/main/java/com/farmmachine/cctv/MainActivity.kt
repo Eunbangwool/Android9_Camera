@@ -9,6 +9,7 @@ import android.util.Log
 import android.view.View
 import android.widget.TextView
 import androidx.activity.ComponentActivity
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -25,11 +26,16 @@ class MainActivity : ComponentActivity() {
 
     companion object {
         private const val TAG = "CctvMain"
-        private const val REQ_CAMERA = 1001
         // 카메라 전원 인가 후 아날로그 디코더가 링크를 잡을 시간(경험적). 바인드 실패 시 재시도 간격도 겸함
         private const val CAMERA_SETTLE_MS = 1200L
         private const val REBIND_RETRY_MS = 2000L
     }
+
+    private val requestCameraPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) startCamera()
+            else showStatus(getString(R.string.cam_permission_needed))
+        }
 
     private lateinit var previewView: PreviewView
     private lateinit var status: TextView
@@ -54,7 +60,7 @@ class MainActivity : ComponentActivity() {
             // 전원 인가 직후 곧바로 열면 신호 미검출로 실패할 수 있어 잠깐 대기
             handler.postDelayed({ startCamera() }, CAMERA_SETTLE_MS)
         } else {
-            requestPermissions(arrayOf(Manifest.permission.CAMERA), REQ_CAMERA)
+            requestCameraPermission.launch(Manifest.permission.CAMERA)
         }
     }
 
@@ -67,16 +73,6 @@ class MainActivity : ComponentActivity() {
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) enterImmersive()
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == REQ_CAMERA) {
-            if (grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) startCamera()
-            else showStatus(getString(R.string.cam_permission_needed))
-        }
     }
 
     private fun hasCameraPermission() =
