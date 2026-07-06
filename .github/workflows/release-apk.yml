@@ -1,0 +1,66 @@
+name: Release CCTV APK (versioned)
+
+# v* 태그를 푸시하면 APK 를 빌드해 버전 릴리스(정식, latest)로 발행한다.
+# (롤링 디버그는 build-cctv-apk.yml 가 매 push 마다 별도로 갱신)
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write          # Releases 발행에 필요
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: assembleDebug → 버전 릴리스
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Gradle 설정
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: gradlew 실행권한
+        run: chmod +x gradlew
+
+      - name: 빌드 (assembleDebug)
+        run: ./gradlew :app:assembleDebug --stacktrace
+
+      - name: APK 버전명으로 정리
+        run: |
+          mkdir -p dist
+          src=$(ls app/build/outputs/apk/debug/*.apk | head -1)
+          cp "$src" "dist/farmmachine-cctv-${GITHUB_REF_NAME}.apk"
+          ls -l dist
+
+      - name: 버전 릴리스 발행
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: CCTV ${{ github.ref_name }}
+          prerelease: false
+          make_latest: true
+          body: |
+            팜머신 CCTV 뷰어 — **${{ github.ref_name }}** (디버그 서명, 태블릿 사이드로드용)
+
+            **기능**
+            - POE IP 카메라(ONVIF/RTSP/H.265) 라이브뷰 — 최대 4대 분할화면 + 탭 전체화면
+            - 분할=서브 스트림 / 전체화면=메인 스트림 자동 전환 (SoC 디코드 부하 관리)
+            - ONVIF 카메라 검색·스트림 URL 자동 조회 + 수동 RTSP URL 입력
+            - 자동 재연결(백오프)·프리즈 워치독, 네트워크 진단 패널
+
+            **설치**: 태블릿에서 아래 APK 다운로드 → "출처를 알 수 없는 앱" 허용 후 설치.
+            ⚠ 디버그 키 서명입니다(스토어 배포용 아님).
+
+            - commit: `${{ github.sha }}`
+          files: dist/*.apk

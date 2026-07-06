@@ -1,0 +1,13 @@
+# Android / Gradle
+.gradle/
+build/
+**/build/
+local.properties
+.idea/
+*.iml
+.cxx/
+captures/
+
+# APK 산출물은 CI Releases 로만 배포 (레포에 커밋 금지)
+*.apk
+*.aab
