@@ -93,13 +93,29 @@ class MjpegServer(
     }
 
     private fun serveIndex(out: OutputStream) {
-        val imgs = (0 until channels).joinToString("") {
-            "<img src=\"/ch$it\" style=\"width:${100 / channels}%;vertical-align:top\">"
-        }
+        // 카메라 탭 → 전체화면 / 다시 탭 → 분할. object-fit:contain 으로 비율 유지(레터박스).
+        val imgs = (0 until channels).joinToString("") { "<img class=\"cam\" src=\"/ch$it\">" }
         val html = """
-            <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">
-            <title>FarmMachine CCTV</title></head>
-            <body style="margin:0;background:#000">$imgs</body></html>
+            <!doctype html><html><head>
+            <meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>FarmMachine CCTV</title>
+            <style>
+            html,body{margin:0;height:100%;background:#000;overflow:hidden}
+            #wrap{display:flex;width:100vw;height:100vh}
+            .cam{flex:1;min-width:0;height:100%;object-fit:contain;background:#000;cursor:pointer}
+            .cam.hide{display:none}
+            .cam.full{flex:none;width:100vw;height:100vh}
+            </style></head>
+            <body><div id="wrap">$imgs</div>
+            <script>
+            var full=-1;
+            var cams=Array.prototype.slice.call(document.querySelectorAll('.cam'));
+            cams.forEach(function(c,i){c.addEventListener('click',function(){toggle(i);});});
+            function toggle(i){
+              if(full===i){full=-1;cams.forEach(function(c){c.className='cam';});}
+              else{full=i;cams.forEach(function(c,j){c.className=(j===i)?'cam full':'cam hide';});}
+            }
+            </script></body></html>
         """.trimIndent()
         val body = html.toByteArray()
         out.write(
