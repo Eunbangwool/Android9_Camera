@@ -76,6 +76,12 @@ class CameraController(
     fun frameSummary(): String =
         (0 until inputNum).joinToString("  ") { "ch$it=${readers[it]?.frames ?: 0}" }
 
+    /** 활성 리더가 모두 프레임을 받기 시작했는지 (상태창 자동 숨김 판단) */
+    fun framesFlowing(): Boolean {
+        val active = readers.filterNotNull()
+        return active.isNotEmpty() && active.all { it.frames > 15 }
+    }
+
     fun stop() {
         readers.forEach { it?.stopReader() }
         readers.fill(null)
@@ -135,7 +141,16 @@ class ChannelReader(
     private fun draw() {
         val canvas = holder.lockCanvas() ?: return
         try {
-            dst.set(0, 0, canvas.width, canvas.height)
+            // 비율 유지(레터박스): 화면에 꽉 채우되 찌그러지지 않게 중앙 정렬 + 검은 여백
+            val cw = canvas.width
+            val ch = canvas.height
+            val scale = minOf(cw.toFloat() / w, ch.toFloat() / h)
+            val dw = (w * scale).toInt()
+            val dh = (h * scale).toInt()
+            val left = (cw - dw) / 2
+            val top = (ch - dh) / 2
+            dst.set(left, top, left + dw, top + dh)
+            canvas.drawColor(android.graphics.Color.BLACK)
             canvas.drawBitmap(bmp, null, dst, null)
         } finally {
             runCatching { holder.unlockCanvasAndPost(canvas) }
