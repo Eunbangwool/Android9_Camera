@@ -14,8 +14,8 @@ import java.nio.ByteBuffer
  *   getPreviewFrameInfo(ch, buffer) 폴링 → NV21→ARGB → SurfaceView 렌더.
  */
 class CameraController(
-    private val width: Int = 480,     // AGMO 검증값
-    private val height: Int = 270,
+    private val width: Int = 1280,    // 720p (1280 은 16정렬이라 스트라이드 안전). 문제 시 480x270 로 복귀
+    private val height: Int = 720,
     private val fps: Int = 25,
     val inputNum: Int = 2,            // 채널(카메라) 수
 ) {
