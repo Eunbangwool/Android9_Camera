@@ -5,7 +5,9 @@ on:
     branches: [main, 'claude/**']
     paths:
       - 'app/**'
+      - 'rtsp/**'
       - '*.gradle.kts'
+      - 'settings.gradle.kts'
       - 'gradle/**'
       - '.github/workflows/build-cctv-apk.yml'
   workflow_dispatch:
@@ -35,14 +37,16 @@ jobs:
       - name: gradlew 실행권한
         run: chmod +x gradlew
 
-      - name: 빌드 (assembleDebug — local + cast 두 플레이버)
-        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: 빌드 (assembleDebug — :app local/cast + :rtsp)
+        run: ./gradlew :app:assembleDebug :rtsp:assembleDebug --stacktrace
 
       - name: APK 업로드 (Actions 아티팩트)
         uses: actions/upload-artifact@v4
         with:
           name: farmmachine-cctv-debug
-          path: app/build/outputs/apk/*/debug/*.apk
+          path: |
+            app/build/outputs/apk/*/debug/*.apk
+            rtsp/build/outputs/apk/debug/*.apk
           if-no-files-found: error
 
       # 디버그 APK 를 Releases 에 롤링 프리릴리스로 발행 (태블릿에서 바로 다운로드/설치)
@@ -56,12 +60,18 @@ jobs:
           make_latest: false
           body: |
             자동 빌드 디버그 APK (디버그 키 서명). 태블릿에 직접 설치용 — 매 빌드마다 갱신됩니다.
+            패키지가 모두 달라 동시 설치 가능.
 
-            - **local** (`app-local-debug.apk`) = 로컬 뷰어 (com.farmmachine.cctv)
-            - **cast** (`app-cast-debug.apk`) = 로컬 뷰어 + 폰 시청용 MJPEG 서버 (com.farmmachine.cctv.cast)
-              폰 브라우저에서 `http://<태블릿 Wi-Fi IP>:8080` 접속
+            **아날로그(qcarcam) — 차량/직결 카메라**
+            - **local** (`app-local-debug.apk`, com.farmmachine.cctv) = 태블릿 화면 전용
+            - **cast** (`app-cast-debug.apk`, com.farmmachine.cctv.cast) = 화면 + 폰 시청 MJPEG 서버
+
+            **IP/RTSP — 하우스용 (AHD→IP 인코더/XVR)**
+            - **rtsp** (`rtsp-debug.apk`, com.farmmachine.cctv.rtsp) = RTSP/ONVIF 뷰어, 최대 12칸 그리드
 
             - commit: ${{ github.sha }}
             - run: #${{ github.run_number }}
             - branch: `${{ github.ref_name }}`
-          files: app/build/outputs/apk/*/debug/*.apk
+          files: |
+            app/build/outputs/apk/*/debug/*.apk
+            rtsp/build/outputs/apk/debug/*.apk

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 런처 아이콘: 진녹색 바탕 + CCTV 카메라 실루엣 (벡터 — API 21+ 네이티브 지원) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#1B5E20"
+        android:pathData="M6,0 L42,0 A6,6 0 0 1 48,6 L48,42 A6,6 0 0 1 42,48 L6,48 A6,6 0 0 1 0,42 L0,6 A6,6 0 0 1 6,0 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M8,16 L30,10 A2,2 0 0 1 32.4,11.4 L34.5,19.2 A2,2 0 0 1 33.1,21.6 L14,26.7 L12,20 L8,21 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20,27 L24,26 L24,34 L14,34 L14,31 L20,31 Z" />
+    <path
+        android:fillColor="#81C784"
+        android:pathData="M36,14 m-2.4,0 a2.4,2.4 0 1 0 4.8,0 a2.4,2.4 0 1 0 -4.8,0" />
+</vector>

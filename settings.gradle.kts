@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "FarmmachineCctv"
 include(":app")
+include(":rtsp")

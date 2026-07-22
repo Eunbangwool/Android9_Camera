@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- appcompat 미사용(자매 레포 정합) — 프레임워크 Material 테마, 영상 뒤 검정 배경 -->
+    <style name="Theme.Cctv" parent="android:Theme.Material.NoActionBar.Fullscreen">
+        <item name="android:windowBackground">@color/black</item>
+        <item name="android:colorPrimary">@color/accent_green</item>
+        <item name="android:colorAccent">@color/accent_green</item>
+        <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:statusBarColor">@color/black</item>
+    </style>
+
+    <!-- 설정 화면: 풀스크린 아님, 어두운 배경 -->
+    <style name="Theme.Cctv.Settings" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/settings_bg</item>
+        <item name="android:colorPrimary">@color/accent_green</item>
+        <item name="android:colorAccent">@color/accent_green</item>
+    </style>
+</resources>
