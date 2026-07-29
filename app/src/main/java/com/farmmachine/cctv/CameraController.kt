@@ -85,6 +85,12 @@ class CameraController(
     /** 채널 중 하나라도 프레임이 흐르기 시작했는지 (상태창 자동 숨김 판단) */
     fun framesFlowing(): Boolean = readers.filterNotNull().any { it.frames > 15 }
 
+    /** 리더 스레드만 정지(카메라는 계속 열린 상태 유지) — 리사이즈/멀티윈도우 재배치용 */
+    fun stopReaders() {
+        readers.forEach { it?.stopReader() }
+        readers.fill(null)
+    }
+
     fun stop() {
         readers.forEach { it?.stopReader() }
         readers.fill(null)
